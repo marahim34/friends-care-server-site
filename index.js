@@ -19,6 +19,7 @@ async function run() {
         const carsCollection = client.db('fantasyCar').collection('cars');
         const categoriesCollection = client.db('fantasyCar').collection('categories');
         const usersCollection = client.db('fantasyCar').collection('users');
+        const bookingCollection = client.db('fantasyCar').collection('bookings');
 
         app.put('/users/:email', async (req, res) => {
             const email = req.params.email;
@@ -101,7 +102,13 @@ async function run() {
             res.send(car);
         });
 
-
+        app.post('/bookings', async (req, res) => {
+            const user = req.body;
+            // console.log(user);
+            const result = await bookingCollection.insertOne(user);
+            console.log(result);
+            res.send(result);
+        });
 
     }
     finally {
