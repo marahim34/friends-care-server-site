@@ -103,12 +103,34 @@ async function run() {
         });
 
         app.post('/bookings', async (req, res) => {
-            const user = req.body;
-            // console.log(user);
-            const result = await bookingCollection.insertOne(user);
-            console.log(result);
+            const booking = req.body;
+            // console.log(booking);
+            const query = {
+                model: booking.model
+            }
+            console.log(query);
+
+            const alreadyBooked = await bookingCollection.findOne(query);
+            console.log(alreadyBooked);
+
+            // if (alreadyBooked) {
+            //     const message = 'This car is already booked';
+            //     console.log(message);
+            //     return res.send({ acknowledged: false }, message)
+            // }
+
+            const result = await bookingCollection.insertOne(booking);
+
             res.send(result);
         });
+
+        app.get('/bookings', async (req, res) => {
+            const email = req.query.email;
+            const filter = { email: email };
+            const bookings = await bookingCollection.find(filter).toArray();
+            res.send(bookings);
+
+        })
 
     }
     finally {
