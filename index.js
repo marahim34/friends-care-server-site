@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { MongoClient, ServerApiVersion } = require('mongodb');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 
@@ -11,43 +11,78 @@ app.use(express.json());
 app.use(cors());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.ivhgvma.mongodb.net/?retryWrites=true&w=majority`;
-
+console.log(uri);
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-
-const carsCollection = client.db('fantasyCar').collection('cars');
-const categoriesCollection = client.db('fantasyCar').collection('categories');
-const usersCollection = client.db('fantasyCar').collection('users');
 
 async function run() {
     try {
+        const carsCollection = client.db('fantasyCar').collection('cars');
+        const categoriesCollection = client.db('fantasyCar').collection('categories');
+        const usersCollection = client.db('fantasyCar').collection('users');
+
+        app.put('/users/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = req.body;
+            const filter = { email: email };
+            const option = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    role: 'User'
+                }
+            }
+            const result = await usersCollection.updateOne(filter, updatedDoc, option);
+            console.log(result);
+        })
+
         // app.put('/users/:email', async (req, res) => {
         //     const email = req.params.email;
+        //     const filter = { email: email }
         //     const user = req.body;
-        //     const filter = { email: email };
         //     const option = { upsert: true };
-        //     const updatedDoc = {
-        //         $set: user,
+        //     const updatedUser = {
+        //         $set: {
+        //             email: user.email
+        //         }
         //     }
-        //     const result = await usersCollection.updateOne(filter, updatedDoc, option);
-
-        //     const token = jwt.sign(user, process.env.SECRET_ACCESS_TOKEN, {
-        //         expiresIn: '1hr'
-        //     });
-        //     res.send(result, token);
-        //     console.log(result, token);
+        //     const result = await userCollection.updateOne(filter, updatedUser, option);
+        //     res.send(result);
+        //     console.log(result);
         // })
+
+        app.get('/jwt', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            if (user) {
+                //  && user.email
+                const token = jwt.sign({ email }, process.env.SECRET_ACCESS_TOKEN, {
+                    expiresIn: '1hr'
+                });
+                return res.send({ accessToken: token })
+            }
+            res.status(403).send({ accessToken: '' })
+        })
+
+
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            // console.log(user);
+            const result = await usersCollection.insertOne(user);
+            console.log(result);
+            res.send(result);
+        });
 
         app.get('/cars', async (req, res) => {
             const query = {};
             const result = await carsCollection.find(query).toArray();
             res.send(result);
-        })
+        });
 
         app.get('/categories', async (req, res) => {
             const query = {};
             const result = await categoriesCollection.find(query).toArray();
             res.send(result)
-        })
+        });
 
         app.get('/category/:id', async (req, res) => {
             const id = req.params.id;
@@ -55,18 +90,16 @@ async function run() {
             const carCategories = await carsCollection.find(query);
             // console.log(carCategories);
             const result = await carCategories.toArray();
-            // console.log(result);
+            console.log(result);
             res.send(result);
-        })
+        });
 
         app.get('/car/:id', async (req, res) => {
             const id = req.params.id;
             const query = { name: id.data }
-            // console.log(query);
             const car = await carsCollection.findOne(query);
-            // console.log(car);
             res.send(car);
-        })
+        });
 
 
 
