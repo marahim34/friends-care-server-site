@@ -40,6 +40,20 @@ async function run() {
         const categoriesCollection = client.db('fantasyCar').collection('categories');
         const usersCollection = client.db('fantasyCar').collection('users');
         const bookingCollection = client.db('fantasyCar').collection('bookings');
+        const blogsCollection = client.db('fantasyCar').collection('blogs');
+
+        const verifyAdmin = async (req, res, next) => {
+            // console.log(req.decoded.email);
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query)
+
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+
+            next()
+        }
 
         app.put('/users/:email', async (req, res) => {
             const email = req.params.email;
@@ -106,21 +120,78 @@ async function run() {
             }
             const result = await usersCollection.updateOne(query, updatedDoc, options);
             res.send(result);
-        })
+        });
 
         app.get('/users/admin/:email', async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
             const user = await usersCollection.findOne(query);
             res.send({ isAdmin: user?.role === 'admin' });
-        })
+        });
+
+        // verify SEller
+        // app.put('/users/admin/:email', verifyJWT, async (req, res) => {
+        //     const decodedEmail = req.decoded.email;
+        //     const filter = { email: decodedEmail };
+        //     const user = await usersCollection.findOne(filter);
+        //     if (user.role !== 'admin') {
+        //         return res.status(403).send({ message: 'forbidden access' })
+        //     }
+        //     const id = req.params.id;
+        //     const query = { _id: ObjectId(id) }
+        //     const options = { upsert: true }
+        //     const updatedDoc = {
+        //         $set: {
+        //             status: 'verified'
+        //         }
+        //     }
+        //     const result = await usersCollection.updateOne(query, updatedDoc, options);
+        //     res.send(result);
+        // });
+
+        app.get('/users/seller/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            res.send({ isSeller: user?.role === 'seller' });
+        });
 
         app.get('/cars', async (req, res) => {
-            const query = {};
+            // const decoded = req.decoded;
+            // if (decoded.email !== req.query.email) {
+            //     res.status(403).send({ message: 'unauthorized access' })
+            // }
+
+            let query = {};
+            // if (req.query.email) {
+            //     query = {
+            //         email: req.query.email
+            //     }
+            // }
+
             const result = await carsCollection.find(query).toArray();
             res.send(result);
             // console.log(result);
         });
+
+        // app.get('/orders', verityJWT, async (req, res) => {
+        //     // console.log(req.headers.authorization);
+        //     const decoded = req.decoded;
+        //     console.log(decoded);
+        //     if (decoded.email !== req.query.email) {
+        //         res.status(403).send({ message: 'unauthorized access' })
+        //     }
+
+        //     let query = {};
+        //     if (req.query.email) {
+        //         query = {
+        //             email: req.query.email
+        //         }
+        //     }
+        //     const cursor = orderCollection.find(query);
+        //     const orders = await cursor.toArray();
+        //     res.send(orders);
+        // })
 
         app.get('/categories', async (req, res) => {
             const query = {};
@@ -184,6 +255,16 @@ async function run() {
             res.send(result)
         });
 
+        app.get('/user/:role', async (req, res) => {
+            const role = req.params.role;
+            const query = { role: role }
+            const roleCategories = await usersCollection.find(query);
+            // console.log(carCategories);
+            const result = await roleCategories.toArray();
+            // console.log(result);
+            res.send(result);
+        });
+
         // app.get('/bookings', async (req, res) => {
         //     let query = {};
         //     const email = req.query.email;
@@ -195,6 +276,13 @@ async function run() {
         //     const bookings = await bookingCollection.find(query).toArray();
         //     res.send(bookings);
         // })
+
+        app.get('/blogs', async (req, res) => {
+            const query = {};
+            const cursor = blogsCollection.find(query);
+            const blogs = await cursor.toArray();
+            res.send(blogs)
+        })
 
     }
     finally {
