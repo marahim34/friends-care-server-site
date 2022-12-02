@@ -1,0 +1,5 @@
+[
+  { "role_id": "01", "role": "admin" },
+  { "role_id": "02", "role": "buyer" },
+  { "role_id": "03", "role": "seller" }
+]
